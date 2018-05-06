@@ -8,6 +8,7 @@ from matplotlib.colors import ListedColormap
 import random
 from cvxopt import matrix, solvers
 import time
+import panda as pd
 
 def load_data(fname):
     """
@@ -202,6 +203,74 @@ class SVM():
             predict[i]=signX(z[i])
         return z, predict
 
+#画出SVM模型测试结果
+def svmPlt(x_test,y_test, svm):
+    X_set, y_set = x_test, t_test
+    h=0.01
+    x_min, x_max = X_set[:, 0].min() - 1, X_set[:, 0].max() + 1
+    y_min, y_max = X_set[:, 1].min() - 1, X_set[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min,x_max,h),np.arange(y_min,y_max,h))
+    
+    plt.subplot(1,1,1)
+
+    start=time.clock() # 开始计算训练模型耗费时间
+
+    Z_set, Z_pred=svm.predict(np.c_[xx.ravel(),yy.ravel()])
+
+    elapsed=(time.clock()-start) #结束计时
+    print("Plting data time used:",elapsed)
+
+    Z_set=Z_pred.reshape(xx.shape)
+    plt.contourf(xx,yy,Z_set,cmap=ListedColormap(('red', 'green')),alpha=0.8)
+    plt.scatter(X_set[:,0],X_set[:,1],c=y_set,cmap=ListedColormap(('orange', 'blue')))
+    plt.xlabel('X0')
+    plt.ylabel('X1')
+    plt.xlim(xx.min(),xx.max())
+    #plt.ylim(yy.min(),yy.max())
+    plt.title('SVM Train')
+    #plt.legend()
+    plt.show()
+
+def sigmoid(X):
+    return 1.0/1+np.exp(-X)
+
+def gradAscent(X,Y): #梯度下降法计算w
+    xMatrix=np.mat(X)
+    labelMatrix=np.mat(Y)
+    m,n=np.shape(xMatrix)
+
+    #预先设置参数
+    alpha=0.001
+    maxCycles=500
+    lambda_=500 #惩罚系数
+
+    w=np.ones((n,1))
+    for i in range(maxCycles):
+        g=sigmoid(xMatrix,w)
+        error=labelMatrix-g
+        w=w+alpha*xMatrix.transpose()*error-lambda_*w #w:=w+\alpha*\sigma(label-g(x))*x-\lambda*w
+    return w
+
+def classify(x):
+    if x>=0.5:
+        return 1.0
+    else:
+        return 0.0
+
+def logistic(x_train,y_train):
+    w=gradAxcent(x_train,y_train)
+    numTest=np.shape(y_train)[0]
+
+    def f(x): # calculate the predicting results
+        h=sigmoid(np.dot(w.T,x))
+        for i in range(numTest):
+            h[i]=classify(h[i])
+        return h
+        pass
+
+    return f
+
+
 if __name__ == '__main__':
     # 载入数据，实际实用时将x替换为具体名称
     train_file='data/train_kernel.txt'
@@ -243,39 +312,23 @@ if __name__ == '__main__':
     # 评估结果，计算准确率
     acc_train = eval_acc(t_train, t_train_pred)
     acc_test = eval_acc(t_test, t_test_pred)
-    print("train accuracy: {:.1f}%".format(acc_train * 100))
-    print("test accuracy: {:.1f}%".format(acc_test * 100))
+    print("SVM train accuracy: {:.1f}%".format(acc_train * 100))
+    print("SVM test accuracy: {:.1f}%".format(acc_test * 100))
 
-    #画图
-    #titles=('SVM with RBF kernel')
-    #fig,sub=plt.subplots(2,2)
-    #plt.subplots_adjust(wspace=0.4, hspace=0.4)
-    #x0,x1=x_test[:,0],x_test[:,1]
-    #xx,yy=make_meshgrid(x0,x1)
+    svmPlt(x_test,y_test,svm)
 
-    X_set, y_set = x_test, t_test
-    h=0.01
-    x_min, x_max = X_set[:, 0].min() - 1, X_set[:, 0].max() + 1
-    y_min, y_max = X_set[:, 1].min() - 1, X_set[:, 1].max() + 1
-    xx, yy = np.meshgrid(np.arange(x_min,x_max,h),np.arange(y_min,y_max,h))
+    #使用训练集训练logistic regression模型
+    f=logistic(x_train,y_train)
+
+    y_linear_train_pred = f(x_train)
+    y_linear_test_pred = f(x_test)
+
+        # 评估结果，计算准确率
+    acc_linear_train = eval_acc(t_train, y_linear_train_pred)
+    acc_linear_test = eval_acc(t_test, y_linear_test_pred)
+    print("linear train accuracy: {:.1f}%".format(acc_train * 100))
+    print("linear test accuracy: {:.1f}%".format(acc_test * 100))
     
-    plt.subplot(1,1,1)
 
-    start=time.clock() # 开始计算训练模型耗费时间
 
-    Z_set, Z_pred=svm.predict(np.c_[xx.ravel(),yy.ravel()])
-
-    elapsed=(time.clock()-start) #结束计时
-    print("Plting data time used:",elapsed)
-
-    Z_set=Z_pred.reshape(xx.shape)
-    plt.contourf(xx,yy,Z_set,cmap=ListedColormap(('red', 'green')),alpha=0.8)
-    plt.scatter(X_set[:,0],X_set[:,1],c=y_set,cmap=ListedColormap(('orange', 'blue')))
-    plt.xlabel('X0')
-    plt.ylabel('X1')
-    plt.xlim(xx.min(),xx.max())
-    #plt.ylim(yy.min(),yy.max())
-    plt.title('SVM Train')
-    #plt.legend()
-    plt.show()
     
