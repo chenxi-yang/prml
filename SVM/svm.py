@@ -253,7 +253,7 @@ if __name__ == '__main__':
     #x0,x1=x_test[:,0],x_test[:,1]
     #xx,yy=make_meshgrid(x0,x1)
 
-    X_set, y_set = x_train, t_train
+    X_set, y_set = x_test, t_test
     h=0.01
     x_min, x_max = X_set[:, 0].min() - 1, X_set[:, 0].max() + 1
     y_min, y_max = X_set[:, 1].min() - 1, X_set[:, 1].max() + 1
@@ -270,11 +270,6 @@ if __name__ == '__main__':
 
     Z_set=Z_pred.reshape(xx.shape)
     plt.contourf(xx,yy,Z_set,cmap=ListedColormap(('red', 'green')),alpha=0.8)
-    #plt.contourf(X1, X2, z_train, alpha = 0.75, cmap = ListedColormap(('red', 'green')))
-    #plt.xlim(X1.min(), X1.max())
-    #plt.ylim(X2.min(), X2.max())
-    #for i, j in enumerate(np.unique(y_set)):
-        #plt.scatter(X_set[y_set == j, 0], X_set[y_set == j, 1],c = ListedColormap(('orange', 'blue'))(i), label = j)
     plt.scatter(X_set[:,0],X_set[:,1],c=y_set,cmap=ListedColormap(('orange', 'blue')))
     plt.xlabel('X0')
     plt.ylabel('X1')
