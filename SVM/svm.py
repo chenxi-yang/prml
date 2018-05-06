@@ -8,7 +8,7 @@ from matplotlib.colors import ListedColormap
 import random
 from cvxopt import matrix, solvers
 import time
-import panda as pd
+import pandas as pd
 
 def load_data(fname):
     """
@@ -232,37 +232,40 @@ def svmPlt(x_test,y_test, svm):
     plt.show()
 
 def sigmoid(X):
-    return 1.0/1+np.exp(-X)
+    return 1.0/(1+np.exp(-X))
 
-def gradAscent(X,Y): #梯度下降法计算w
+def gradAscent(X,Y,lamda=0,alpha=0.001,maxCycles=10000): #梯度下降法计算w
     xMatrix=np.mat(X)
-    labelMatrix=np.mat(Y)
+    labelMatrix=np.mat(Y).transpose()
     m,n=np.shape(xMatrix)
-
-    #预先设置参数
-    alpha=0.001
-    maxCycles=500
-    lambda_=500 #惩罚系数
-
     w=np.ones((n,1))
     for i in range(maxCycles):
-        g=sigmoid(xMatrix,w)
-        error=labelMatrix-g
-        w=w+alpha*xMatrix.transpose()*error-lambda_*w #w:=w+\alpha*\sigma(label-g(x))*x-\lambda*w
+        g=xMatrix*w
+        h=sigmoid(g)
+        error=h-labelMatrix
+        G=(alpha/m)*(xMatrix.transpose()*error)+lamda/m*w
+        w=w-G
+    print(w)
     return w
 
 def classify(x):
     if x>=0.5:
         return 1.0
     else:
-        return 0.0
+        return -1.0
 
-def logistic(x_train,y_train):
-    w=gradAxcent(x_train,y_train)
+def logistic(x_train,y_train,lamda=0,alpha=0.001,maxCycles=1000000):
+    w=gradAscent(x_train,y_train)
     numTest=np.shape(y_train)[0]
 
     def f(x): # calculate the predicting results
-        h=sigmoid(np.dot(w.T,x))
+        xMatrix=np.mat(x)
+        #print('x shape:',np.shape(x))
+        #print('w shape:',np.shape(w))
+        #print('x*w shape:',np.shape(x*w))
+        g=xMatrix*w
+        h=sigmoid(g)
+        print(h.T)
         for i in range(numTest):
             h[i]=classify(h[i])
         return h
@@ -270,14 +273,17 @@ def logistic(x_train,y_train):
 
     return f
 
+def linearPlot():
+    return 0
+
 
 if __name__ == '__main__':
     # 载入数据，实际实用时将x替换为具体名称
-    train_file='data/train_kernel.txt'
-    test_file='data/test_kernel.txt'
+    #train_file='data/train_kernel.txt'
+    #test_file='data/test_kernel.txt'
 
-    #train_file = 'data/train_linear.txt'
-    #test_file = 'data/test_linear.txt'
+    train_file = 'data/train_linear.txt'
+    test_file = 'data/test_linear.txt'
 
     #data_train_kernel=load_data(train_file_kernel)
     #data_test_kernel=load_data(test_file_kernel)
@@ -285,7 +291,9 @@ if __name__ == '__main__':
     data_train = load_data(train_file)  # 数据格式[x1, x2, t]
     data_test = load_data(test_file)
 
+    
     # 使用训练集训练SVM模型
+    """
     svm = SVM(data_train, ('rbf',0.5))  # 初始化模型
     #svm.train_kernel(data_train_kernel)
     
@@ -298,7 +306,7 @@ if __name__ == '__main__':
 
     # 使用SVM模型预测标签
     start=time.clock() # 开始计算训练模型耗费时间
-
+    
     x_train = data_train[:, :2]  # feature [x1, x2]
     t_train = data_train[:, 2]  # 真实标签
     z_train, t_train_pred = svm.predict(x_train)  # 预测标签
@@ -316,18 +324,27 @@ if __name__ == '__main__':
     print("SVM test accuracy: {:.1f}%".format(acc_test * 100))
 
     svmPlt(x_test,y_test,svm)
+    """
 
     #使用训练集训练logistic regression模型
+    x_train = data_train[:, :2]  # feature [x1, x2]
+    y_train = data_train[:, 2]  # 真实标签
+
+    x_test = data_test[:, :2]
+    y_test = data_test[:, 2]
+
     f=logistic(x_train,y_train)
 
     y_linear_train_pred = f(x_train)
+    print(y_train.T)
+    print(y_linear_train_pred.T)
     y_linear_test_pred = f(x_test)
 
-        # 评估结果，计算准确率
-    acc_linear_train = eval_acc(t_train, y_linear_train_pred)
-    acc_linear_test = eval_acc(t_test, y_linear_test_pred)
-    print("linear train accuracy: {:.1f}%".format(acc_train * 100))
-    print("linear test accuracy: {:.1f}%".format(acc_test * 100))
+    # 评估结果，计算准确率
+    acc_linear_train = eval_acc(y_train, y_linear_train_pred)
+    acc_linear_test = eval_acc(y_test, y_linear_test_pred)
+    print("linear train accuracy: {:.1f}%".format(acc_linear_train * 100))
+    print("linear test accuracy: {:.1f}%".format(acc_linear_test * 100))
     
 
 
