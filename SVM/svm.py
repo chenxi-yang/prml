@@ -45,9 +45,8 @@ def calcu_kernel_value(X,Y,kTup):
     if kTup[0]=='linear':
         m,n=np.shape(X)
         kValue=np.zeros([m,1])
-        d=kTup[1]
         for j in range(m):
-            kValue[j]=np.dot(Xi,Xj)
+            kValue[j]=np.dot(X[j,:],Y)
     if kTup[0]=='poly':
         m,n=np.shape(X)
         kValue=np.zeros([m,1])
@@ -74,6 +73,7 @@ def calcu_kernel_matrix(X,kTup):
 
 #计算k(Xi,Xj)的值
 def k(Xi,Xj,kTup): #2 columns
+    #print(kTup[0])
     if kTup[0]=='linear':
         value=np.dot(Xi,Xj)
     if kTup[0]=='poly':
@@ -229,7 +229,7 @@ def svmPlt(x_test,y_test, svm):
     plt.xlim(xx.min(),xx.max())
     plt.ylim(yy.min(),yy.max())
     plt.title('SVM Train')
-    #plt.legend()
+
     plt.show()
 
 def sigmoid(x):
@@ -246,8 +246,8 @@ def gradAscent(X,Y,lamda,alpha,maxCycles): #梯度下降法计算w
         g=X.dot(w.reshape(-1,1))
         h=sigmoid(g)
         error=h-(labelMatrix==1)#由于logistic函数算出来的是[0,1], 而分类为1，-1，因此把-1转换为0
-        G=(1.0/m)*((error.T).dot(X))+lamda/m*(np.r_[[0],w[1:]])
-        w=w-alpha*G.flatten()
+        E=(1.0/m)*((error.T).dot(X))+lamda/m*(np.r_[[0],w[1:]])
+        w=w-alpha*E.flatten()
     return w
 
 def classify(x):
@@ -256,7 +256,7 @@ def classify(x):
     else:
         return -1
 
-def logistic(x_train,y_train,lamda,alpha,maxCycles):
+def logisticLinear(x_train,y_train,lamda,alpha,maxCycles):
     x=np.c_[np.ones((np.shape(x_train)[0],1)),x_train]
     y=np.c_[y_train]
     w=gradAscent(x,y,lamda,alpha,maxCycles)
@@ -276,6 +276,44 @@ def logistic(x_train,y_train,lamda,alpha,maxCycles):
         pass
 
     return w,f
+
+def svmWeight(x_train,y_train):
+    n=x_train.shape[0]
+    #初始化
+    #calculate coefficient Q, for the quadratic part
+    #use k(Xi,Xj) to calculate the value of kernel 
+    Q=np.eye((n,n))
+    Q=matrix(Q,(n,n),'d')
+
+    #calculate coefficient p for the linear part
+    p=np.zeros(n)
+    p=matrix(p,(n,1),'d')
+
+    #calculate the coefficient: -ai<=0
+    G=-1*np.eye(n,n)
+    G=matrix(G,(n,n),'d')
+    h=np.zeros(n)
+    h=matrix(h,(n,1),'d')
+
+    sol=solvers.qp(Q, p, G, h, A, b)
+    alpha=sol['x']
+
+    #convert the min value to exact zero
+    alpha=np.mat(alpha)
+    for i in range(n):
+            if alpha[i][0]<=1e-5:
+                alpha[i][0]=0.0
+    
+    return alpha
+
+def svmLinear(x_train,y_train,lamda):
+    w=svmWeight(x_train,y_train,lamda)
+
+    def f(x):
+        return y.astype('int')
+        pass
+    return w,f
+
 
 def linearPlotData(x,axes=None):
     neg_data=(x[:,2]==-1)
@@ -304,8 +342,8 @@ if __name__ == '__main__':
 
     
     # 使用训练集训练SVM模型
-    """
-    svm = SVM(data_train, ('rbf',0.5))  # 初始化模型
+    
+    svm = SVM(data_train, ('linear',))  # 初始化模型
     #svm.train_kernel(data_train_kernel)
     
     start=time.clock() # 开始计算训练模型耗费时间
@@ -334,17 +372,19 @@ if __name__ == '__main__':
     print("SVM train accuracy: {:.1f}%".format(acc_train * 100))
     print("SVM test accuracy: {:.1f}%".format(acc_test * 100))
 
-    svmPlt(x_test,y_test,svm)
-    """
+    svmPlt(x_test,t_test,svm)
+    
+    # 使用训练集训练SVM模型 end
 
     #使用训练集训练logistic regression模型
+    """
     x_train = data_train[:, :2]  # feature [x1, x2]
     y_train = data_train[:, 2]  # 真实标签
 
     x_test = data_test[:, :2]
     y_test = data_test[:, 2]
 
-    w,f=logistic(x_train,y_train,lamda=10,alpha=0.002,maxCycles=100000)
+    w,f=logisticLinear(x_train,y_train,lamda=0,alpha=0.002,maxCycles=10)
 
     y_linear_train_pred = f(x_train)
     y_linear_test_pred = f(x_test)
@@ -368,8 +408,8 @@ if __name__ == '__main__':
     plt.ylim(yy.min(),yy.max())
     plt.title('Logistic Regression')
     plt.show()
-
-
+    """
+    #使用训练集训练logistic regression模型
 
 
 
