@@ -9,6 +9,7 @@ import random
 from cvxopt import matrix, solvers
 import time
 import pandas as pd
+import bigfloat
 
 def load_data(fname):
     """
@@ -226,57 +227,71 @@ def svmPlt(x_test,y_test, svm):
     plt.xlabel('X0')
     plt.ylabel('X1')
     plt.xlim(xx.min(),xx.max())
-    #plt.ylim(yy.min(),yy.max())
+    plt.ylim(yy.min(),yy.max())
     plt.title('SVM Train')
     #plt.legend()
     plt.show()
 
-def sigmoid(X):
-    return 1.0/(1+np.exp(-X))
+def sigmoid(x):
+    return 1.0/(1+np.exp(-x))
 
-def gradAscent(X,Y,lamda=0,alpha=0.001,maxCycles=10000): #梯度下降法计算w
-    xMatrix=np.mat(X)
-    labelMatrix=np.mat(Y).transpose()
-    m,n=np.shape(xMatrix)
-    w=np.ones((n,1))
+def gradAscent(X,Y,lamda,alpha,maxCycles): #梯度下降法计算w
+    #xMatrix=np.mat(np.c_[np.ones((np.shape(X)[0],1)),X])
+    labelMatrix=Y
+    m,n=np.shape(X)
+    print(n)
+    w=np.array(np.zeros(n))
     for i in range(maxCycles):
-        g=xMatrix*w
+        #print(w.reshape(-1,1))
+        g=X.dot(w.reshape(-1,1))
         h=sigmoid(g)
         error=h-labelMatrix
-        G=(alpha/m)*(xMatrix.transpose()*error)+lamda/m*w
-        w=w-G
-    print(w)
+        #print(np.shape((error.T).dot(X)))
+        #print(np.shape(w[1:]))
+        #print(w[1:])
+        G=(1.0/m)*((error.T).dot(X))+lamda/m*(np.r_[[0],w[1:]])
+        w=w-alpha*G.flatten()
+        #print(w.T)
     return w
 
 def classify(x):
     if x>=0.5:
-        return 1.0
+        return 1
     else:
-        return -1.0
+        return -1
 
-def logistic(x_train,y_train,lamda=0,alpha=0.001,maxCycles=1000000):
-    w=gradAscent(x_train,y_train)
-    numTest=np.shape(y_train)[0]
+def logistic(x_train,y_train,lamda,alpha,maxCycles):
+    x=np.c_[np.ones((np.shape(x_train)[0],1)),x_train]
+    y=np.c_[y_train]
+    w=gradAscent(x,y,lamda,alpha,maxCycles)
+    numTest=np.shape(y)[0]
+    print(w)
 
     def f(x): # calculate the predicting results
-        xMatrix=np.mat(x)
+        xMatrix=np.mat(np.c_[np.ones((np.shape(x)[0],1)),x])
         #print('x shape:',np.shape(x))
         #print('w shape:',np.shape(w))
         #print('x*w shape:',np.shape(x*w))
-        g=xMatrix*w
+        g=xMatrix.dot(w.reshape(-1,1))
         h=sigmoid(g)
-        print(h.T)
         for i in range(numTest):
             h[i]=classify(h[i])
-        return h
+        return h.astype('int')
         pass
 
-    return f
+    return w,f
 
-def linearPlot():
-    return 0
-
-
+def linearPlotData(x,axes=None):
+    neg_data=(x[:,2]==-1)
+    pos_data=(x[:,2]==1)
+    if axes==None:
+        axes=plt.gca()
+    axes.scatter(x[neg_data][:,0],x[neg_data][:,1],s=40,c='red',marker='o',label=-1)
+    axes.scatter(x[pos_data][:,0],x[pos_data][:,1],s=40,c='green',marker='x',label=1)
+    axes.set_xlabel('X0')
+    axes.set_ylabel('X1')
+    axes.legend(frameon=True,fancybox=True)
+    
 if __name__ == '__main__':
     # 载入数据，实际实用时将x替换为具体名称
     #train_file='data/train_kernel.txt'
@@ -333,11 +348,9 @@ if __name__ == '__main__':
     x_test = data_test[:, :2]
     y_test = data_test[:, 2]
 
-    f=logistic(x_train,y_train)
+    w,f=logistic(x_train,y_train,lamda=10,alpha=0.002,maxCycles=100000)
 
     y_linear_train_pred = f(x_train)
-    print(y_train.T)
-    print(y_linear_train_pred.T)
     y_linear_test_pred = f(x_test)
 
     # 评估结果，计算准确率
@@ -346,6 +359,22 @@ if __name__ == '__main__':
     print("linear train accuracy: {:.1f}%".format(acc_linear_train * 100))
     print("linear test accuracy: {:.1f}%".format(acc_linear_test * 100))
     
+    linearPlotData(data_test)
+    h=0.1
+    x_min,x_max=x_test[:,0].min(),x_test[:,0].max()
+    y_min,y_max=x_test[:,1].min(),x_test[:,1].max()
+    xx,yy=np.meshgrid(np.arange(x_min,x_max,h),np.arange(y_min,y_max,h))
+    h=sigmoid(np.c_[np.ones((xx.ravel().shape[0],1)),xx.ravel(),yy.ravel()].dot(w.reshape(-1,1)))
+    h=h.reshape(xx.shape)
+
+    plt.contour(xx,yy,h,[0.5],linewidths=1,colors='r')
+    plt.xlim(xx.min(),xx.max())
+    plt.ylim(yy.min(),yy.max())
+    plt.title('Logistic Regression')
+    plt.show()
+
+
+
 
 
     
