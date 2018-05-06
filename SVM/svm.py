@@ -245,13 +245,9 @@ def gradAscent(X,Y,lamda,alpha,maxCycles): #梯度下降法计算w
         #print(w.reshape(-1,1))
         g=X.dot(w.reshape(-1,1))
         h=sigmoid(g)
-        error=h-labelMatrix
-        #print(np.shape((error.T).dot(X)))
-        #print(np.shape(w[1:]))
-        #print(w[1:])
+        error=h-(labelMatrix==1)#由于logistic函数算出来的是[0,1], 而分类为1，-1，因此把-1转换为0
         G=(1.0/m)*((error.T).dot(X))+lamda/m*(np.r_[[0],w[1:]])
         w=w-alpha*G.flatten()
-        #print(w.T)
     return w
 
 def classify(x):
