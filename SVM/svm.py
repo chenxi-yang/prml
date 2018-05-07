@@ -235,7 +235,7 @@ def svmPlt(x_test,y_test, svm):
 def sigmoid(x):
     return 1.0/(1+np.exp(-x))
 
-def gradAscent(X,Y,lamda,alpha,maxCycles): #梯度下降法计算w
+def gradAscent(X,Y,lamda,alpha,maxCycles,modelType): #梯度下降法计算w
     #xMatrix=np.mat(np.c_[np.ones((np.shape(X)[0],1)),X])
     labelMatrix=Y
     m,n=np.shape(X)
@@ -244,77 +244,58 @@ def gradAscent(X,Y,lamda,alpha,maxCycles): #梯度下降法计算w
     for i in range(maxCycles):
         #print(w.reshape(-1,1))
         g=X.dot(w.reshape(-1,1))
-        h=sigmoid(g)
-        error=h-(labelMatrix==1)#由于logistic函数算出来的是[0,1], 而分类为1，-1，因此把-1转换为0
+        if modelType=='linear': #对损失函数求导后 得2(yt-t)x
+        	h=np.multiply(g,labelMatrix) 
+        	error=h-labelMatrix
+        if modelType=='logistic':
+        	h=sigmoid(g)
+        	error=h-(labelMatrix==1)#由于logistic函数算出来的是[0,1], 而分类为1，-1，因此把-1转换为0
+        if modelType=='hinge':
+        	h=np.multiply(g,labelMatrix) #t*y
+        	error=np.zeros((m,1))
+        	for k in range(m):
+        		if h[k]<=0:
+        			error[k]=-labelMatrix[k]
+        		elif h[k]<=1:
+        			error[k]=-labelMatrix[k]*(1-h[k])
+        		else:
+        			error[k]=0
         E=(1.0/m)*((error.T).dot(X))+lamda/m*(np.r_[[0],w[1:]])
         w=w-alpha*E.flatten()
     return w
 
-def classify(x):
-    if x>=0.5:
-        return 1
-    else:
-        return -1
+def sign2(x,modelType):
+	if modelType=='logistic':
+		condition=0.5
+	else:
+		condition=0.0
+	if x>=condition:
+		return 1
+	else:
+		return -1
 
-def logisticLinear(x_train,y_train,lamda,alpha,maxCycles):
+def classify(x_train,y_train,lamda,alpha,maxCycles,modelType):
     x=np.c_[np.ones((np.shape(x_train)[0],1)),x_train]
     y=np.c_[y_train]
-    w=gradAscent(x,y,lamda,alpha,maxCycles)
+    w=gradAscent(x,y,lamda,alpha,maxCycles,modelType)
     numTest=np.shape(y)[0]
     print(w)
 
     def f(x): # calculate the predicting results
         xMatrix=np.mat(np.c_[np.ones((np.shape(x)[0],1)),x])
-        #print('x shape:',np.shape(x))
-        #print('w shape:',np.shape(w))
-        #print('x*w shape:',np.shape(x*w))
         g=xMatrix.dot(w.reshape(-1,1))
-        h=sigmoid(g)
+        if modelType=='logistic':
+        	h=sigmoid(g)
+        else:
+        	h=g
         for i in range(numTest):
-            h[i]=classify(h[i])
+            h[i]=sign2(h[i],modelType)
         return h.astype('int')
         pass
 
-    return w,f
+    return w,f,modelType
 
-def svmWeight(x_train,y_train):
-    n=x_train.shape[0]
-    #初始化
-    #calculate coefficient Q, for the quadratic part
-    #use k(Xi,Xj) to calculate the value of kernel 
-    Q=np.eye((n,n))
-    Q=matrix(Q,(n,n),'d')
-
-    #calculate coefficient p for the linear part
-    p=np.zeros(n)
-    p=matrix(p,(n,1),'d')
-
-    #calculate the coefficient: -ai<=0
-    G=-1*np.eye(n,n)
-    G=matrix(G,(n,n),'d')
-    h=np.zeros(n)
-    h=matrix(h,(n,1),'d')
-
-    sol=solvers.qp(Q, p, G, h, A, b)
-    alpha=sol['x']
-
-    #convert the min value to exact zero
-    alpha=np.mat(alpha)
-    for i in range(n):
-            if alpha[i][0]<=1e-5:
-                alpha[i][0]=0.0
-    
-    return alpha
-
-def svmLinear(x_train,y_train,lamda):
-    w=svmWeight(x_train,y_train,lamda)
-
-    def f(x):
-        return y.astype('int')
-        pass
-    return w,f
-
-
+#画出线性二分类结果的图
 def linearPlotData(x,axes=None):
     neg_data=(x[:,2]==-1)
     pos_data=(x[:,2]==1)
@@ -342,8 +323,8 @@ if __name__ == '__main__':
 
     
     # 使用训练集训练SVM模型
-    
-    svm = SVM(data_train, ('linear',))  # 初始化模型
+    """
+    svm = SVM(data_train, ('poly',3))  # 初始化模型
     #svm.train_kernel(data_train_kernel)
     
     start=time.clock() # 开始计算训练模型耗费时间
@@ -373,18 +354,18 @@ if __name__ == '__main__':
     print("SVM test accuracy: {:.1f}%".format(acc_test * 100))
 
     svmPlt(x_test,t_test,svm)
-    
+    """
     # 使用训练集训练SVM模型 end
 
     #使用训练集训练logistic regression模型
-    """
+    
     x_train = data_train[:, :2]  # feature [x1, x2]
     y_train = data_train[:, 2]  # 真实标签
 
     x_test = data_test[:, :2]
     y_test = data_test[:, 2]
 
-    w,f=logisticLinear(x_train,y_train,lamda=0,alpha=0.002,maxCycles=10)
+    w,f,modelType=classify(x_train,y_train,lamda=10,alpha=0.002,maxCycles=10,modelType='hinge')
 
     y_linear_train_pred = f(x_train)
     y_linear_test_pred = f(x_test)
@@ -400,15 +381,18 @@ if __name__ == '__main__':
     x_min,x_max=x_test[:,0].min(),x_test[:,0].max()
     y_min,y_max=x_test[:,1].min(),x_test[:,1].max()
     xx,yy=np.meshgrid(np.arange(x_min,x_max,h),np.arange(y_min,y_max,h))
-    h=sigmoid(np.c_[np.ones((xx.ravel().shape[0],1)),xx.ravel(),yy.ravel()].dot(w.reshape(-1,1)))
+    if modelType=='logistic':
+    	h=sigmoid(np.c_[np.ones((xx.ravel().shape[0],1)),xx.ravel(),yy.ravel()].dot(w.reshape(-1,1)))
+    else:
+    	h=np.c_[np.ones((xx.ravel().shape[0],1)),xx.ravel(),yy.ravel()].dot(w.reshape(-1,1))
     h=h.reshape(xx.shape)
 
     plt.contour(xx,yy,h,[0.5],linewidths=1,colors='r')
     plt.xlim(xx.min(),xx.max())
     plt.ylim(yy.min(),yy.max())
-    plt.title('Logistic Regression')
+    plt.title('SVM Hinge Loss')
     plt.show()
-    """
+    
     #使用训练集训练logistic regression模型
 
 
