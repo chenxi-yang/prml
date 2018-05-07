@@ -241,23 +241,28 @@ def gradAscent(X,Y,lamda,alpha,maxCycles,modelType): #梯度下降法计算w
     m,n=np.shape(X)
     print(n)
     w=np.array(np.zeros(n))
+    error=np.zeros((m,1))
     for i in range(maxCycles):
         #print(w.reshape(-1,1))
         g=X.dot(w.reshape(-1,1))
         if modelType=='linear': #对损失函数求导后 得2(yt-t)x
-        	h=np.multiply(g,labelMatrix) 
+        	h=g 
+        	for k in range(m):
+        		if h[k]>0:
+        			h[k]=1
+        		elif h[k]<0:
+        			h[k]=-1
         	error=h-labelMatrix
         if modelType=='logistic':
         	h=sigmoid(g)
         	error=h-(labelMatrix==1)#由于logistic函数算出来的是[0,1], 而分类为1，-1，因此把-1转换为0
         if modelType=='hinge':
         	h=np.multiply(g,labelMatrix) #t*y
-        	error=np.zeros((m,1))
         	for k in range(m):
-        		if h[k]<=0:
+        		if h[k]<1:
         			error[k]=-labelMatrix[k]
-        		elif h[k]<=1:
-        			error[k]=-labelMatrix[k]*(1-h[k])
+        		#elif h[k]<1:
+        		#	error[k]=-labelMatrix[k]*(1-h[k])
         		else:
         			error[k]=0
         E=(1.0/m)*((error.T).dot(X))+lamda/m*(np.r_[[0],w[1:]])
@@ -365,7 +370,10 @@ if __name__ == '__main__':
     x_test = data_test[:, :2]
     y_test = data_test[:, 2]
 
-    w,f,modelType=classify(x_train,y_train,lamda=10,alpha=0.002,maxCycles=10,modelType='hinge')
+    start=time.clock() # 开始计算训练模型耗费时间
+    w,f,modelType=classify(x_train,y_train,lamda=10,alpha=0.002,maxCycles=1000,modelType='hinge')
+    elapsed=(time.clock()-start) #结束计时
+    print("Classification time:",elapsed)
 
     y_linear_train_pred = f(x_train)
     y_linear_test_pred = f(x_test)
@@ -376,7 +384,7 @@ if __name__ == '__main__':
     print("linear train accuracy: {:.1f}%".format(acc_linear_train * 100))
     print("linear test accuracy: {:.1f}%".format(acc_linear_test * 100))
     
-    linearPlotData(data_test)
+    linearPlotData(data_train)
     h=0.1
     x_min,x_max=x_test[:,0].min(),x_test[:,0].max()
     y_min,y_max=x_test[:,1].min(),x_test[:,1].max()
@@ -390,7 +398,7 @@ if __name__ == '__main__':
     plt.contour(xx,yy,h,[0.5],linewidths=1,colors='r')
     plt.xlim(xx.min(),xx.max())
     plt.ylim(yy.min(),yy.max())
-    plt.title('SVM Hinge Loss')
+    plt.title('SVM (Hinge Loss)')
     plt.show()
     
     #使用训练集训练logistic regression模型
