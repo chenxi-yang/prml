@@ -73,7 +73,6 @@ def calcu_kernel_matrix(X,kTup):
 
 #计算k(Xi,Xj)的值
 def k(Xi,Xj,kTup): #2 columns
-    #print(kTup[0])
     if kTup[0]=='linear':
         value=np.dot(Xi,Xj)
     if kTup[0]=='poly':
@@ -205,9 +204,9 @@ class SVM():
         return z, predict
 
 #画出SVM模型测试结果
-def svmPlt(x_test,y_test, svm):
+def svmPlt(x_test,y_test, svm, title):
     X_set, y_set = x_test, t_test
-    h=0.01
+    h=0.1
     x_min, x_max = X_set[:, 0].min() - 1, X_set[:, 0].max() + 1
     y_min, y_max = X_set[:, 1].min() - 1, X_set[:, 1].max() + 1
     xx, yy = np.meshgrid(np.arange(x_min,x_max,h),np.arange(y_min,y_max,h))
@@ -222,13 +221,13 @@ def svmPlt(x_test,y_test, svm):
     print("Plting data time used:",elapsed)
 
     Z_set=Z_pred.reshape(xx.shape)
-    plt.contourf(xx,yy,Z_set,cmap=ListedColormap(('red', 'green')),alpha=0.8)
-    plt.scatter(X_set[:,0],X_set[:,1],c=y_set,cmap=ListedColormap(('orange', 'blue')))
+    plt.contourf(xx,yy,Z_set,cmap=plt.cm.Paired,alpha=0.8)
+    plt.scatter(X_set[:,0],X_set[:,1],c=y_set,cmap=plt.cm.Paired)
     plt.xlabel('X0')
     plt.ylabel('X1')
     plt.xlim(xx.min(),xx.max())
     plt.ylim(yy.min(),yy.max())
-    plt.title('SVM Train')
+    plt.title(title)
 
     plt.show()
 
@@ -314,27 +313,26 @@ def linearPlotData(x,axes=None):
     
 if __name__ == '__main__':
     # 载入数据，实际实用时将x替换为具体名称
-    #train_file='data/train_kernel.txt'
-    #test_file='data/test_kernel.txt'
+    train_file='data/train_kernel.txt'
+    test_file='data/test_kernel.txt'
 
-    train_file = 'data/train_linear.txt'
-    test_file = 'data/test_linear.txt'
+    #train_file = 'data/train_linear.txt'
+    #test_file = 'data/test_linear.txt'
 
     #data_train_kernel=load_data(train_file_kernel)
     #data_test_kernel=load_data(test_file_kernel)
 
     data_train = load_data(train_file)  # 数据格式[x1, x2, t]
     data_test = load_data(test_file)
-
     
     # 使用训练集训练SVM模型
-    """
-    svm = SVM(data_train, ('poly',3))  # 初始化模型
+    
+    svm = SVM(data_train, ('poly',2.0))  # 初始化模型
     #svm.train_kernel(data_train_kernel)
     
     start=time.clock() # 开始计算训练模型耗费时间
 
-    svm.train(data_train)  # 训练模型
+    svm.train(data_test)  # 训练模型
 
     elapsed=(time.clock()-start) #结束计时
     print("Model training time used:",elapsed)
@@ -358,12 +356,12 @@ if __name__ == '__main__':
     print("SVM train accuracy: {:.1f}%".format(acc_train * 100))
     print("SVM test accuracy: {:.1f}%".format(acc_test * 100))
 
-    svmPlt(x_test,t_test,svm)
-    """
+    svmPlt(x_test,t_test,svm,title='SVM (Polynomial Kernel, d=1)')
+    
     # 使用训练集训练SVM模型 end
 
     #使用训练集训练logistic regression模型
-    
+    """
     x_train = data_train[:, :2]  # feature [x1, x2]
     y_train = data_train[:, 2]  # 真实标签
 
@@ -400,7 +398,7 @@ if __name__ == '__main__':
     plt.ylim(yy.min(),yy.max())
     plt.title('SVM (Hinge Loss)')
     plt.show()
-    
+    """
     #使用训练集训练logistic regression模型
 
 
