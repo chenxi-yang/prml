@@ -140,7 +140,7 @@ def classify(x_train,y_train,lamda,alpha,maxCycles,modelType):
     
 
 #画出线性二分类结果的图
-def linearPlotData(x,axes=None):
+def dataPlot(x,axes=None):
     neg_data=(x[:,2]==-1)
     zero_data=(x[:,2]==0)
     pos_data=(x[:,2]==1)
@@ -193,7 +193,7 @@ if __name__ == '__main__':
     print("Multi-classification train accuracy: {:.1f}%".format(acc_linear_train * 100))
     print("Multi-classification test accuracy: {:.1f}%".format(acc_linear_test * 100))
     
-    linearPlotData(data_test)
+    dataPlot(data_test)
     h=0.1
     x_min,x_max=x_test[:,0].min(),x_test[:,0].max()
     y_min,y_max=x_test[:,1].min(),x_test[:,1].max()
