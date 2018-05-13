@@ -136,7 +136,7 @@ if __name__ == '__main__':
 
     data_train = load_data(train_file)  # 数据格式[x1, x2, t]
     data_test = load_data(test_file)
-
+    """
     #使用训练集训练logistic regression模型
     
     x_train = data_train[:, :2]  # feature [x1, x2]
@@ -158,8 +158,9 @@ if __name__ == '__main__':
     acc_linear_test = eval_acc(y_test, y_linear_test_pred)
     print("linear train accuracy: {:.1f}%".format(acc_linear_train * 100))
     print("linear test accuracy: {:.1f}%".format(acc_linear_test * 100))
-    
-    linearPlotData(data_test)
+    """    
+    linearPlotData(data_train)
+    """
     h=0.1
     x_min,x_max=x_test[:,0].min(),x_test[:,0].max()
     y_min,y_max=x_test[:,1].min(),x_test[:,1].max()
@@ -173,7 +174,8 @@ if __name__ == '__main__':
     plt.contour(xx,yy,h,[0.5],linewidths=1,colors='r')
     plt.xlim(xx.min(),xx.max())
     plt.ylim(yy.min(),yy.max())
-    plt.title('Linear Classification (Squared Loss)')
+    """
+    plt.title('Linear Train Data')
     plt.show()
     
     #使用训练集训练logistic regression模型

@@ -88,6 +88,9 @@ def k(Xi,Xj,kTup): #2 columns
 #使用cvxopt的solvers.qp计算二次规划problem
 #C is the upper bound of alpha
 def calcuAlpha(x_train,y_train,kTup,C):
+    print(np.shape(x_train))
+    print(np.shape(y_train))
+
     n=x_train.shape[0]
     #print(y_train.T)
     #初始化
@@ -109,11 +112,7 @@ def calcuAlpha(x_train,y_train,kTup,C):
     b=matrix(0.0)
 
     #calculate the coefficient: 0 <= ai <= c
-    #G=-1*np.eye(n,n)
-    #G=matrix(G,(n,n),'d')
     G=matrix(np.vstack((np.diag(np.ones(n)*-1),np.identity(n))))
-    #h=np.zeros(n)
-    #h=matrix(h,(n,1),'d')
     h=matrix(np.hstack((np.zeros(n),np.ones(n)*C)))
 
     sol=solvers.qp(Q, p, G, h, A, b)
@@ -168,25 +167,48 @@ class SVM():
     """
     SVM模型。
     """
-    def __init__(self, data_train,kTup,C):
+    def __init__(self, data_train, kTup, C):
         # 请补全此处代码
-        self.x_train1=data_train[:,:2]
+        self.x_train1=data_train[:,:2] # for classify the 1 and -1
         self.y_train1=np.c_[data_train[:,2]]
         self.x_train2=data_train[:,:2]
         self.y_train2=np.c_[data_train[:,2]]
+        self.x_train3=data_train[:,:2]
+        self.y_train3=np.c_[data_train[:,2]]
 
-        self.y_train1[self.y_train1==0]=1
+        # 1 and -1
+        self.index1=np.nonzero(self.y_train1)[0]
+        self.x_train1=self.x_train1[self.index1]
+        self.y_trian1=self.y_train1[self.index1]
+     
+        # 1 and 0 (as -1)
+        self.y_train2[self.y_train2==-1]=2
         self.y_train2[self.y_train2==0]=-1
+        self.y_train2[self.y_train2==2]=0
+        self.index2=np.nonzero(self.y_train2)[0]
+        self.x_train2=self.x_train2[self.index2]
+        self.y_trian2=self.y_train2[self.index2]  
 
+        # 0 (as 1) and -1
+        self.y_train3[self.y_train3==1]=2
+        self.y_train3[self.y_train3==0]=1
+        self.y_train3[self.y_train3==2]=0
+        self.index3 = np.nonzero(self.y_train3)[0]    
+        self.x_train3 = self.x_train3[self.index3]
+        self.y_train3 = self.y_train3[self.index3]  
 
-        self.numSamples=self.x_train1.shape[0] #初始行数
+        self.numSamples1=self.x_train1.shape[0] #初始行数
+        self.numSamples2=self.x_train2.shape[0] #初始行数
+        self.numSamples3=self.x_train3.shape[0] #初始行数
         self.b1=0.0
         self.b2=0.0
+        self.b3=0.0
 
         self.C=C
 
-        self.alpha1=np.mat(np.zeros((self.numSamples,1)))
-        self.alpha2=np.mat(np.zeros((self.numSamples,1)))
+        self.alpha1=np.mat(np.zeros((self.numSamples1,1)))
+        self.alpha2=np.mat(np.zeros((self.numSamples2,1)))
+        self.alpha3=np.mat(np.zeros((self.numSamples3,1)))
 
         self.kTup=kTup
         pass
@@ -196,12 +218,43 @@ class SVM():
         训练模型。
         """
         # 请补全此处代码
-        
-        self.alpha1=calcuAlpha(self.x_train1,self.y_train1,self.kTup,self.C)
-        self.b1=calcuB(self.x_train1,self.y_train1,self.alpha1,self.kTup)
+        self.x_train1=data_train[:,:2] # for classify the 1 and -1
+        self.y_train1=np.c_[data_train[:,2]]
+        self.x_train2=data_train[:,:2]
+        self.y_train2=np.c_[data_train[:,2]]
+        self.x_train3=data_train[:,:2]
+        self.y_train3=np.c_[data_train[:,2]]
 
-        self.alpha2=calcuAlpha(self.x_train2,self.y_train2,self.kTup,self.C)
-        self.b2=calcuB(self.x_train2,self.y_train2,self.alpha2,self.kTup)
+        # 1 and -1
+        self.index1=np.nonzero(self.y_train1)[0]
+        x_train1=self.x_train1[self.index1]
+        y_train1=self.y_train1[self.index1]
+        
+        # 1 and 0 (as -1)
+        self.y_train2[self.y_train2==-1]=2
+        self.y_train2[self.y_train2==0]=-1
+        self.y_train2[self.y_train2==2]=0
+        self.index2=np.nonzero(self.y_train2)[0]
+        x_train2=self.x_train2[self.index2]
+        y_train2=self.y_train2[self.index2]  
+
+        # 0 (as 1) and -1
+        self.y_train3[self.y_train3==1]=2
+        self.y_train3[self.y_train3==0]=1
+        self.y_train3[self.y_train3==2]=0
+        self.index3 = np.nonzero(self.y_train3)[0]   
+        x_train3 = self.x_train3[self.index3]
+        y_train3 = self.y_train3[self.index3]
+
+
+        self.alpha1=calcuAlpha(x_train1,y_train1,self.kTup,self.C)
+        self.b1=calcuB(x_train1,y_train1,self.alpha1,self.kTup)
+
+        self.alpha2=calcuAlpha(x_train2,y_train2,self.kTup,self.C)
+        self.b2=calcuB(x_train2,y_train2,self.alpha2,self.kTup)
+
+        self.alpha3=calcuAlpha(x_train3,y_train3,self.kTup,self.C)
+        self.b3=calcuB(x_train3,y_train3,self.alpha3,self.kTup)
 
     def predict(self, x):
         """
@@ -211,16 +264,29 @@ class SVM():
         x_test=x[:,:2]
         rowTest=x_test.shape[0]
         predict=np.zeros((rowTest,1))
+        predict1=np.zeros((rowTest,1))
+        predict2=np.zeros((rowTest,1))
+        predict3=np.zeros((rowTest,1))
         z1=np.zeros((rowTest,1))
         z2=np.zeros((rowTest,1))
+        z3=np.zeros((rowTest,1))
         alpha1=self.alpha1
         alpha2=self.alpha2
+        alpha3=self.alpha3
 
-        
+        x_train1=self.x_train1[self.index1]
+        y_train1=self.y_train1[self.index1]
+
+        x_train2=self.x_train2[self.index2]
+        y_train2=self.y_train2[self.index2]
+
+        x_train3 = self.x_train3[self.index3]
+        y_train3 = self.y_train3[self.index3]
+
         #support vector1
         supportVectorsIndex1=np.nonzero(alpha1)[0]
-        supportVectors1=self.x_train1[supportVectorsIndex1]
-        supportVectorLabels1=self.y_train1[supportVectorsIndex1]
+        supportVectors1=x_train1[supportVectorsIndex1]
+        supportVectorLabels1=y_train1[supportVectorsIndex1]
         supportVectorAlpha1=alpha1[supportVectorsIndex1]
         supportVectorLength1=np.shape(supportVectorAlpha1)[0]  #the number of support vector
         print(supportVectorLength1)
@@ -228,20 +294,29 @@ class SVM():
         
         #support vector2
         supportVectorsIndex2=np.nonzero(alpha2)[0]
-        supportVectors2=self.x_train2[supportVectorsIndex2]
-        supportVectorLabels2=self.y_train2[supportVectorsIndex2]
+        supportVectors2=x_train2[supportVectorsIndex2]
+        supportVectorLabels2=y_train2[supportVectorsIndex2]
         supportVectorAlpha2=alpha2[supportVectorsIndex2]
         supportVectorLength2=np.shape(supportVectorAlpha2)[0]  #the number of support vector
         print(supportVectorLength2)
         tmp2=np.mat(np.zeros((supportVectorLength2,1)))
         #print(supportVectorAlpha2.T)
         
+        #support vector3
+        supportVectorsIndex3=np.nonzero(alpha3)[0]
+        supportVectors3=x_train3[supportVectorsIndex3]
+        supportVectorLabels3=y_train3[supportVectorsIndex3]
+        supportVectorAlpha3=alpha3[supportVectorsIndex3]
+        supportVectorLength3=np.shape(supportVectorAlpha3)[0]  #the number of support vector
+        print(supportVectorLength3)
+        tmp3=np.mat(np.zeros((supportVectorLength3,1)))
+        
         for i in range(rowTest):
             kValue=calcu_kernel_value(supportVectors1,x_test[i,:],self.kTup)
             for k in range(supportVectorLength1):
                 tmp1[k]=supportVectorLabels1[k]*supportVectorAlpha1[k]
             z1[i]=np.dot(kValue.T,tmp1)+self.b1
-            predict[i]=signX1(z1[i])
+            predict1[i]=signX1(z1[i])
         
         for i in range(rowTest):
             kValue=calcu_kernel_value(supportVectors2,x_test[i,:],self.kTup)
@@ -249,8 +324,23 @@ class SVM():
                 tmp2[k]=supportVectorLabels2[k]*supportVectorAlpha2[k]
             z2[i]=np.dot(kValue.T,tmp2)+self.b2
             #predict[i]=signX1(z2[i])
-            predict[i]=signX2(predict[i],z2[i])
+            predict2[i]=signX1(z2[i])
         
+        for i in range(rowTest):
+            kValue=calcu_kernel_value(supportVectors3,x_test[i,:],self.kTup)
+            for k in range(supportVectorLength3):
+                tmp3[k]=supportVectorLabels3[k]*supportVectorAlpha3[k]
+            z3[i]=np.dot(kValue.T,tmp3)+self.b3
+            predict3[i]=signX1(z3[i])
+
+        for i in range(rowTest):
+            if predict1[i] == 1 and predict2[i] == 1:
+                predict[i] = 1
+            elif predict2[i] == -1 and predict3[i] == 1:
+                predict[i] = 0
+            elif predict1[i] == -1 and predict3[i] == -1:
+                predict[i] = -1
+
         return predict
 
 #画出SVM模型测试结果
@@ -296,7 +386,7 @@ if __name__ == '__main__':
     
     # 使用训练集训练SVM模型
     
-    svm = SVM(data_train, ('linear',5),C=2)  # 初始化模型
+    svm = SVM(data_train, ('poly',2),C=10)  # 初始化模型
     #svm.train_kernel(data_train_kernel)
     
     start=time.clock() # 开始计算训练模型耗费时间
@@ -330,7 +420,7 @@ if __name__ == '__main__':
     print("SVM train accuracy: {:.1f}%".format(acc_train * 100))
     print("SVM test accuracy: {:.1f}%".format(acc_test * 100))
 
-    svmPlt(x_test,t_test,svm,title='Multi-Classification (Polynominal Kernel, d=3)')
+    svmPlt(x_test,t_test,svm,title='Multi-Classification (Polynominla Kernel  d=2.0)')
 
 
 
