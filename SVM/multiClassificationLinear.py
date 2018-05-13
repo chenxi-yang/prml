@@ -214,7 +214,7 @@ if __name__ == '__main__':
     plt.contour(xx,yy,h2,[0.5],linewidths=1,colors='b')
     plt.xlim(xx.min(),xx.max())
     plt.ylim(yy.min(),yy.max())
-    plt.title('Multi-classification (SVM hinge loss alpha=0.001 maxCycles=100000) ')
+    plt.title('Multi-classification (Squared Loss alpha=0.001 maxCycles=100000) ')
     plt.show()
     
     #使用训练集训练logistic regression模型

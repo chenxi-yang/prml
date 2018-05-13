@@ -87,7 +87,7 @@ def k(Xi,Xj,kTup): #2 columns
 #计算alpha
 #使用cvxopt的solvers.qp计算二次规划problem
 #C is the upper bound of alpha
-def calcuAlpha(x_train,y_train,kTup):
+def calcuAlpha(x_train,y_train,kTup,C):
     n=x_train.shape[0]
     #初始化
     #calculate coefficient Q, for the quadratic part
@@ -107,11 +107,13 @@ def calcuAlpha(x_train,y_train,kTup):
     A=matrix(y_train,(1,n),'d')
     b=matrix(0.0)
 
-    #calculate the coefficient: -ai<=0
-    G=-1*np.eye(n,n)
-    G=matrix(G,(n,n),'d')
-    h=np.zeros(n)
-    h=matrix(h,(n,1),'d')
+    #calculate the coefficient: 0 <= ai <= c
+    #G=-1*np.eye(n,n)
+    #G=matrix(G,(n,n),'d')
+    G=matrix(np.vstack((np.diag(np.ones(n)*-1),np.identity(n))))
+    #h=np.zeros(n)
+    #h=matrix(h,(n,1),'d')
+    h=matrix(np.hstack((np.zeros(n),np.ones(n)*C)))
 
     sol=solvers.qp(Q, p, G, h, A, b)
     alpha=sol['x']
@@ -157,7 +159,7 @@ class SVM():
     """
     SVM模型。
     """
-    def __init__(self, data_train,kTup):
+    def __init__(self, data_train,kTup,C):
         # 请补全此处代码
         self.x_train=data_train[:,:2]
         self.y_train=data_train[:,2]
@@ -165,6 +167,7 @@ class SVM():
         self.b=0
         self.alpha=np.mat(np.zeros((self.numSamples,1)))
         self.kTup=kTup
+        self.C=C
         pass
 
     def train(self, data_train):
@@ -172,7 +175,7 @@ class SVM():
         训练模型。
         """
         # 请补全此处代码
-        self.alpha=calcuAlpha(self.x_train,self.y_train,self.kTup)
+        self.alpha=calcuAlpha(self.x_train,self.y_train,self.kTup,self.C)
         self.b=calcuB(self.x_train,self.y_train,self.alpha,self.kTup)
 
     def predict(self, x):
@@ -247,7 +250,7 @@ if __name__ == '__main__':
     
     # 使用训练集训练SVM模型
     
-    svm = SVM(data_train, ('poly',2.0))  # 初始化模型
+    svm = SVM(data_train, ('linear',),C=100)  # 初始化模型
     #svm.train_kernel(data_train_kernel)
     
     start=time.clock() # 开始计算训练模型耗费时间
@@ -276,7 +279,7 @@ if __name__ == '__main__':
     print("SVM train accuracy: {:.1f}%".format(acc_train * 100))
     print("SVM test accuracy: {:.1f}%".format(acc_test * 100))
 
-    svmPlt(x_test,t_test,svm,title='SVM (Polynomial Kernel, d=1)')
+    svmPlt(x_test,t_test,svm,title='SVM (Linear Kernel)')
 
 
 

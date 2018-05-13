@@ -146,7 +146,7 @@ if __name__ == '__main__':
     y_test = data_test[:, 2]
 
     start=time.clock() # 开始计算训练模型耗费时间
-    w,f,modelType=classify(x_train,y_train,lamda=10,alpha=0.002,maxCycles=1000,modelType='hinge')
+    w,f,modelType=classify(x_train,y_train,lamda=10,alpha=0.002,maxCycles=1000,modelType='linear')
     elapsed=(time.clock()-start) #结束计时
     print("Classification time:",elapsed)
 
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     acc_linear_test = eval_acc(y_test, y_linear_test_pred)
     print("linear train accuracy: {:.1f}%".format(acc_linear_train * 100))
     print("linear test accuracy: {:.1f}%".format(acc_linear_test * 100))
-    """
+    
     linearPlotData(data_test)
     h=0.1
     x_min,x_max=x_test[:,0].min(),x_test[:,0].max()
@@ -173,9 +173,9 @@ if __name__ == '__main__':
     plt.contour(xx,yy,h,[0.5],linewidths=1,colors='r')
     plt.xlim(xx.min(),xx.max())
     plt.ylim(yy.min(),yy.max())
-    plt.title('SVM (Hinge Loss)')
+    plt.title('Linear Classification (Squared Loss)')
     plt.show()
-    """
+    
     #使用训练集训练logistic regression模型
 
 
