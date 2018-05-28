@@ -91,8 +91,8 @@ if __name__ == '__main__':
 
 	x = data[:, :]
 
-	y = classify(x, k=3, iterNum=500)
-	mogPlt(x, y, title='Data Classified, Iteration = 500')
+	y = classify(x, k=3, iterNum=5)
+	mogPlt(x, y, title='Data Classified, Iteration = 5')
 
 
 
